@@ -47,8 +47,9 @@ def cleanClients():
             clients_lock.acquire()
             message = {"cmd": 2,"player":{"id":str(dropped)}}
             m = json.dumps(message)
-            for cli in clients:
-               sock.sendto(bytes(m,'utf8'), (cli[0],cli[1]))
+            for client in clients:
+               print(m)
+               sock.sendto(bytes(m,'utf8'), (client[0],client[1]))
             del clients[c]
             clients_lock.release()
       time.sleep(1)
