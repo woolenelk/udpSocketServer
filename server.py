@@ -43,13 +43,13 @@ def cleanClients():
       for c in list(clients.keys()):
          if (datetime.now() - clients[c]['lastBeat']).total_seconds() > 5:
             print('Dropped Client: ', c)
-            #dropped = c
+            dropped = c
             clients_lock.acquire()
+            message = {"cmd": 2,"player":{"id":str(dropped)}}
+            m = json.dumps(message)
+            for cli in clients:
+               sock.sendto(bytes(m,'utf8'), (cli[0],cli[1]))
             del clients[c]
-            #message = {"cmd": 2,"player":{"id":str(dropped)}}
-            #m = json.dumps(message)
-            #for cli in clients:
-            #   sock.sendto(bytes(m,'utf8'), (cli[0],cli[1]))
             clients_lock.release()
       time.sleep(1)
 
