@@ -45,7 +45,7 @@ def cleanClients(sock):
             print('Dropped Client: ', c)
             dropped = c
             clients_lock.acquire()
-            message = {"cmd": 2,"player":{"id":str(dropped)}}
+            message = {"cmd": 2,"Dropped Client":{"id":str(dropped)}}
             m = json.dumps(message)
             for client in clients:
                print(m)
