@@ -18,20 +18,14 @@ def connectionLoop(sock):
       if addr in clients:
          if 'heartbeat' in data:
             clients[addr]['lastBeat'] = datetime.now()
+         #elseif 'position' in data:
+            #update position here
+            #client[addr]['position'] = data
       else:
          if 'connect' in data:
             clients[addr] = {}
             clients[addr]['lastBeat'] = datetime.now()
-            clients[addr]['color'] = 0
-            clients[addr]['position'] = {"X":random.uniform(-10.5,10.5),"Y":random.uniform(-10.5,10.5)}
-            message = {"cmd": 0,"player":{"id":str(addr)}}
-            m = json.dumps(message)
-            for c in clients:
-               sock.sendto(bytes(m,'utf8'), (c[0],c[1]))
-         if 'heartbeat' in data:
-            clients[addr] = {}
-            clients[addr]['lastBeat'] = datetime.now()
-            clients[addr]['color'] = 0
+            clients[addr]['color'] = {"R": 1, "G": 1, "B": 1}
             clients[addr]['position'] = {"X":random.uniform(-10.5,10.5),"Y":random.uniform(-10.5,10.5)}
             message = {"cmd": 0,"player":{"id":str(addr)}}
             m = json.dumps(message)
@@ -40,17 +34,20 @@ def connectionLoop(sock):
 
 def cleanClients():
    while True:
+      
       for c in list(clients.keys()):
          if (datetime.now() - clients[c]['lastBeat']).total_seconds() > 5:
             print('Dropped Client: ', c)
-            #dropped = c
+            dropper = str(c)
+            message = {"cmd": 2,"player":{"id":dropper}}
+            m = json.dumps(message)
+            for client in clients:
+               sock.sendto(bytes(m,'utf8'), (client[0],client[1]))
             clients_lock.acquire()
             del clients[c]
-            #message = {"cmd": 2,"player":{"id":str(dropped)}}
-            #m = json.dumps(message)
-            #for cli in clients:
-            #   sock.sendto(bytes(m,'utf8'), (cli[0],cli[1]))
             clients_lock.release()
+            
+            
       time.sleep(1)
 
 def gameLoop(sock):
