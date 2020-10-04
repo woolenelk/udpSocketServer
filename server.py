@@ -9,6 +9,9 @@ import json
 clients_lock = threading.Lock()
 connected = 0
 
+packetPerSecond = 100
+colorChangeCountdown = 0
+
 clients = {}
 
 def connectionLoop(sock):
@@ -18,6 +21,14 @@ def connectionLoop(sock):
       if addr in clients:
          if 'heartbeat' in data:
             clients[addr]['lastBeat'] = datetime.now()
+         if 'CubeUp' in data:
+            clients[addr]['position']["Y"] += 0.01
+         if 'CubeDown' in data:
+            clients[addr]['position']["Y"] -= 0.01
+         if 'CubeLeft' in data:
+            clients[addr]['position']["X"] -= 0.01
+         if 'CubeRight' in data:
+            clients[addr]['position']["X"] += 0.01
       else:
          if 'connect' in data:
             clients[addr] = {}
@@ -55,12 +66,16 @@ def cleanClients(sock):
 
 def gameLoop(sock):
    while True:
+      global colorChangeCountdown
+      global packetPerSecond
+
       GameState = {"cmd": 1, "players": []}
       clients_lock.acquire()
       print (clients)
       for c in clients:
          player = {}
-         clients[c]['color'] = {"R": random.random(), "G": random.random(), "B": random.random()}
+         if colorChangeCountdown == 0:
+            clients[c]['color'] = {"R": random.random(), "G": random.random(), "B": random.random()}
          player['id'] = str(c)
          player['color'] = clients[c]['color']
          player['position'] = clients[c]['position']
@@ -70,7 +85,8 @@ def gameLoop(sock):
       for c in clients:
          sock.sendto(bytes(s,'utf8'), (c[0],c[1]))
       clients_lock.release()
-      time.sleep(1)
+      colorChangeCountdown = (colorChangeCountdown + 1) % packetPerSecond
+      time.sleep(1.0/packetPerSecond)
 
 def main():
    port = 12345
