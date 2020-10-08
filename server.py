@@ -9,7 +9,7 @@ import json
 clients_lock = threading.Lock()
 connected = 0
 
-packetPerSecond = 100
+packetPerSecond = 1
 colorChangeCountdown = 0
 
 clients = {}
@@ -18,32 +18,38 @@ def connectionLoop(sock):
    while True:
       data, addr = sock.recvfrom(1024)
       data = str(data)
+      #print (data)
+      data = data[ 2 : len(data)-1]
+      #print (data)
+      data = json.loads(data)
+      #print (data)
       if addr in clients:
-         if 'heartbeat' in data:
+         if 'heartbeat' in data['cmd']:
             clients[addr]['lastBeat'] = datetime.now()
-         if 'CubeUp' in data:
-            clients[addr]['position']["Y"] += 0.01
-         if 'CubeDown' in data:
-            clients[addr]['position']["Y"] -= 0.01
-         if 'CubeLeft' in data:
-            clients[addr]['position']["X"] -= 0.01
-         if 'CubeRight' in data:
-            clients[addr]['position']["X"] += 0.01
+         if 'updatePosition' in data['cmd']:
+            #print (data)
+            clients[addr]["position"]['X'] = data['x']
+            clients[addr]["position"]['Y'] = data['y']
+            clients[addr]["position"]['Z'] = data['z']
       else:
-         if 'connect' in data:
+         if 'connect' in data['cmd']:
+            print (data)
             clients[addr] = {}
             clients[addr]['lastBeat'] = datetime.now()
             clients[addr]['color'] = 0
-            clients[addr]['position'] = {"X":random.uniform(-10.5,10.5),"Y":random.uniform(-10.5,10.5)}
-            message = {"cmd": 0,"id":str(addr)}
+            clients[addr]['position'] = {'X':0,'Y':0, 'Z': 0.0}
+            message = {"cmd": 3,"id":str(addr)}
             m = json.dumps(message)
+            sock.sendto(bytes(m,'utf8'), (addr[0],addr[1]))
+            message2 = {"cmd": 0,"id":str(addr)}
+            m2 = json.dumps(message2)
             for c in clients:
-               sock.sendto(bytes(m,'utf8'), (c[0],c[1]))
-         if 'heartbeat' in data:
+               sock.sendto(bytes(m2,'utf8'), (c[0],c[1]))
+         if 'heartbeat' in data['cmd']:
             clients[addr] = {}
             clients[addr]['lastBeat'] = datetime.now()
             clients[addr]['color'] = 0
-            clients[addr]['position'] = {"X":random.uniform(-10.5,10.5),"Y":random.uniform(-10.5,10.5)}
+            clients[addr]['position'] = {'X':0,'Y':0, 'Z': 0.0}
             message = {"cmd": 0,"id":str(addr)}
             m = json.dumps(message)
             for c in clients:
@@ -81,7 +87,7 @@ def gameLoop(sock):
          player['position'] = clients[c]['position']
          GameState['players'].append(player)
       s=json.dumps(GameState)
-      print(s)
+      #print(s)
       for c in clients:
          sock.sendto(bytes(s,'utf8'), (c[0],c[1]))
       clients_lock.release()
