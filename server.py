@@ -27,7 +27,7 @@ def connectionLoop(sock):
          if 'heartbeat' in data['cmd']:
             clients[addr]['lastBeat'] = datetime.now()
          if 'updatePosition' in data['cmd']:
-            #print (data)
+            print (data)
             clients[addr]["position"]['X'] = data['x']
             clients[addr]["position"]['Y'] = data['y']
             clients[addr]["position"]['Z'] = data['z']
